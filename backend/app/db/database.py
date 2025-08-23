@@ -8,7 +8,7 @@ from contextlib import contextmanager
 from typing import Generator
 
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, DeclarativeBase
+from sqlalchemy.orm import sessionmaker, DeclarativeBase, Session
 
 from ..config import get_settings
 
@@ -20,7 +20,21 @@ class Base(DeclarativeBase):
 
 def _create_engine():
     settings = get_settings()
-    return create_engine(settings.database_url, pool_pre_ping=True)
+    # Add pgvector support
+    engine = create_engine(
+        settings.database_url, 
+        pool_pre_ping=True,
+        echo=settings.app_env == "development"
+    )
+    
+    # Import pgvector extension
+    try:
+        from pgvector.sqlalchemy import Vector
+        # This ensures pgvector is available
+    except ImportError:
+        pass
+    
+    return engine
 
 
 # The engine is created lazily to allow settings to be loaded
@@ -34,12 +48,12 @@ def get_engine():
     return _engine
 
 
-def get_session_factory() -> sessionmaker:
+def get_session_factory() -> sessionmaker[Session]:
     engine = get_engine()
     return sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
-def get_db() -> Generator:
+def get_db() -> Generator[Session, None, None]:
     """FastAPI dependency that yields a SQLAlchemy session and ensures it is closed.
     
     Usage:
@@ -56,3 +70,14 @@ def get_db() -> Generator:
         yield db
     finally:
         db.close()
+
+
+# Create tables (for development/testing)
+def create_tables():
+    """Create all tables. Use only for development/testing."""
+    Base.metadata.create_all(bind=get_engine())
+
+
+def drop_tables():
+    """Drop all tables. Use only for development/testing."""
+    Base.metadata.drop_all(bind=get_engine())

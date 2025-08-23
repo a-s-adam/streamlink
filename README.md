@@ -1,101 +1,300 @@
-# Personal Entertainment Knowledge Graph
+# Streamlink MVP
 
-This repository contains the code for the **Personal Entertainment Knowledge Graph (PEKG)** MVP.  
-The goal of this project is to provide users with a unified view of their streaming habits by ingesting data from **Netflix** and **YouTube**, enriching it with metadata from TMDB and other sources, and building a knowledge graph and vector store for personalized recommendations.
+A modern, responsive web application that ingests Netflix CSV and YouTube history (OAuth), enriches with TMDB, stores items + events, computes embeddings, and serves basic recommendations with auth + settings.
 
-## Features
+## 🚀 Quick Start
 
-The MVP supports the following high‑level features:
+### Prerequisites
+- Docker and Docker Compose
+- Git
 
-1. **Google sign‑in** using NextAuth on the frontend.  
-2. **CSV upload** of Netflix viewing history.  
-3. **YouTube ingestion** using OAuth and the YouTube Data API v3.  
-4. **Metadata enrichment** via the TMDB API.  
-5. **Knowledge graph** built in Neo4j Community Edition.  
-6. **Vector store** built in PostgreSQL using the [`pgvector`](https://github.com/pgvector/pgvector) extension.  
-7. **Hybrid recommendations** that combine graph algorithms and embedding similarity.  
-8. **Optional local LLM** (via Ollama) to generate natural language explanations for recommendations.
+### 1. Clone and Setup
+```bash
+git clone https://github.com/a-s-adam/streamlink.git
+cd streamlink
+```
 
-## Repository structure
+### 2. Configure Environment
+```bash
+# Copy environment template
+cp .env.example .env
+
+# Edit .env and fill in your values
+# For testing, you can leave most values as defaults
+```
+
+### 3. Start the Application
+```bash
+# Start all services
+make up
+
+# Or manually:
+docker compose up -d
+```
+
+### 4. Access the Application
+- **Frontend**: http://localhost:3000
+- **API**: http://localhost:8000
+- **API Docs**: http://localhost:8000/docs
+- **PostgreSQL**: localhost:5432
+- **Redis**: localhost:6379
+- **Neo4j**: http://localhost:7474 (optional)
+
+### 5. Seed the Database (Optional)
+```bash
+# Seed with sample data
+make seed
+
+# Or manually:
+docker compose exec api python -m app.scripts.seed
+```
+
+## 🏗️ Architecture
+
+### Backend (FastAPI)
+- **FastAPI** with Python 3.11+
+- **SQLAlchemy 2.x** with **Alembic** migrations
+- **PostgreSQL** + **pgvector** for embeddings
+- **Celery** + **Redis** for background tasks
+- **Neo4j** for graph relationships (optional)
+
+### Frontend (Next.js 14)
+- **Next.js 14** with App Router
+- **TypeScript** + **TailwindCSS**
+- **shadcn/ui** components
+- **NextAuth** for authentication
+
+### Key Features
+- Netflix CSV ingestion with TMDB enrichment
+- YouTube OAuth integration
+- AI-powered recommendations using embeddings
+- Background job processing
+- Mock mode for testing without API keys
+
+## 🔧 Configuration
+
+### Environment Variables
+
+#### Common
+```bash
+NODE_ENV=development
+APP_ENV=development
+DATABASE_URL=postgresql+psycopg://postgres:postgres@db:5432/streamlink
+REDIS_URL=redis://redis:6379/0
+```
+
+#### Authentication
+```bash
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=your-secret-here
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+```
+
+#### APIs
+```bash
+TMDB_API_KEY=your-tmdb-api-key
+YOUTUBE_API_KEY=your-youtube-api-key
+YOUTUBE_OAUTH_CLIENT_ID=your-youtube-oauth-client-id
+YOUTUBE_OAUTH_CLIENT_SECRET=your-youtube-oauth-client-secret
+```
+
+#### Embeddings
+```bash
+EMBEDDINGS_PROVIDER=openai  # or ollama
+OPENAI_API_KEY=your-openai-api-key
+OLLAMA_BASE_URL=http://host.docker.internal:11434
+```
+
+#### Mock Mode
+```bash
+MOCK_MODE=true  # Enable for testing without real API keys
+```
+
+## 📁 Project Structure
 
 ```
 streamlink/
-│  .gitignore             # Ignore rules for Python/Node/other toolchain artifacts
-│  .env.example           # Template for all environment variables
-│  docker-compose.yml     # Compose file to run local services
-│  README.md              # Project overview and setup instructions
-│
-├‑backend/
-│  ├‑app/
-│  │  ├‑__init__.py
-│  │  ├‑main.py         # FastAPI application entrypoint
-│  │  ├‑config.py       # Pydantic settings model
-│  │  ├‑api/
-│  │  │  ├‑__init__.py
-│  │  │  └‑routes.py    # Placeholder API routes (CSV upload, health)
-│  │  ├‑models/
-│  │  │  ├‑__init__.py
-│  │  │  └‑user.py      # SQLAlchemy model definitions
-│  │  ├‑services/
-│  │  │  ├‑__init__.py
-│  │  │  ├‑ingestion.py # Stubs for Netflix/YouTube ingestion
-│  │  │  └‑tmdb.py      # Stub for TMDB metadata resolver
-│  │  └‑db/
-│  │     ├‑__init__.py
-│  │     └‑database.py  # SQLAlchemy engine and session
-│  └‑Dockerfile         # Build backend container image
-│
-└‑frontend/              # Placeholder for Next.js frontend
-   └‑README.md          # Brief explanation of the frontend scaffold
+├── backend/                 # FastAPI backend
+│   ├── app/
+│   │   ├── api/            # API routers
+│   │   ├── models/         # Database models
+│   │   ├── services/       # Business logic
+│   │   ├── tasks/          # Celery tasks
+│   │   └── scripts/        # Database scripts
+│   ├── alembic/            # Database migrations
+│   └── requirements.txt
+├── frontend/                # Next.js frontend
+│   ├── src/
+│   │   ├── app/            # Next.js app router
+│   │   ├── components/     # React components
+│   │   └── lib/            # Utilities
+│   └── package.json
+├── infra/                   # Infrastructure
+│   └── init/               # Database initialization
+├── samples/                 # Sample data files
+├── docker-compose.yml       # Service orchestration
+├── Makefile                 # Development commands
+└── .env.example            # Environment template
 ```
 
-## Getting started
+## 🛠️ Development
 
-1. **Clone the repository** (if you haven't already):
+### Available Commands
+```bash
+make help          # Show all available commands
+make up            # Start all services
+make down          # Stop all services
+make build         # Build all service images
+make logs          # Show service logs
+make migrate       # Run database migrations
+make seed          # Seed database with sample data
+make test          # Run all tests
+make fmt           # Format code
+make lint          # Lint code
+```
 
-   ```sh
-   git clone https://github.com/a-s-adam/streamlink.git
-   cd streamlink
-   ```
+### Backend Development
+```bash
+cd backend
 
-2. **Configure environment variables** by copying `.env.example` to `.env` and filling in the necessary secrets (API keys, database credentials, OAuth client secrets, etc.).
+# Install dependencies
+pip install -r requirements.txt
 
-3. **Launch the infrastructure** via Docker Compose:
+# Run migrations
+alembic upgrade head
 
-   ```sh
-   docker compose up -d
-   ```
+# Start development server
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
-   This will start PostgreSQL (with pgvector), Neo4j, Redis, and, if enabled, Ollama.  
-   You can run the backend locally on your host machine or build it as a Docker container using the provided `backend/Dockerfile`.
+# Run tests
+pytest
 
-4. **Run the backend** (locally):
+# Format code
+ruff format .
+ruff check .
+```
 
-   ```sh
-   cd backend
-   pip install -r requirements.txt
-   uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-   ```
+### Frontend Development
+```bash
+cd frontend
 
-5. **Run the frontend** (once scaffolded):
+# Install dependencies
+npm install
 
-   ```sh
-   cd frontend
-   npm install
-   npm run dev
-   ```
+# Start development server
+npm run dev
 
-## Next steps
+# Build for production
+npm run build
 
-This initial commit lays down the groundwork for the PEKG MVP.  
-In subsequent iterations we will:
+# Run tests
+npm test
 
-1. Build out the authentication flow with NextAuth and Google OAuth.
-2. Implement ingestion pipelines for Netflix CSVs and YouTube history.
-3. Add TMDB metadata lookup and normalize titles.
-4. Design the Neo4j graph schema and populate it along with the pgvector store.
-5. Develop recommendation algorithms (graph and embedding based) and expose them via the API.
-6. Flesh out the Next.js UI for uploading files, connecting accounts, viewing the graph, and receiving recommendations.
+# Lint and format
+npm run lint
+npm run format
+```
 
-Contributions and feedback are welcome!  
-Feel free to open issues or pull requests as we iterate on the MVP.
+## 🧪 Testing
+
+### Backend Tests
+```bash
+cd backend
+pytest tests/
+```
+
+### Frontend Tests
+```bash
+cd frontend
+npm test
+```
+
+### Integration Tests
+```bash
+# Start services
+make up
+
+# Run tests
+make test
+
+# Check service health
+curl http://localhost:8000/health
+curl http://localhost:3000
+```
+
+## 🚀 Deployment
+
+### Production Considerations
+1. Set `NODE_ENV=production` and `APP_ENV=production`
+2. Use strong secrets for `NEXTAUTH_SECRET` and `ENCRYPTION_KEY`
+3. Configure proper CORS origins
+4. Set up SSL/TLS certificates
+5. Configure database backups
+6. Set up monitoring and logging
+
+### Docker Production
+```bash
+# Build production images
+docker compose -f docker-compose.prod.yml build
+
+# Start production services
+docker compose -f docker-compose.prod.yml up -d
+```
+
+## 🔍 API Endpoints
+
+### Core Endpoints
+- `GET /` - API information
+- `GET /health` - Health check
+- `GET /docs` - Interactive API documentation
+
+### Authentication
+- `POST /api/auth/users` - Create user
+- `GET /api/auth/users` - List users
+- `GET /api/auth/users/{id}` - Get user
+
+### Data Ingestion
+- `POST /api/ingest/netflix` - Upload Netflix CSV
+- `POST /api/ingest/youtube/start` - Start YouTube OAuth
+- `POST /api/ingest/youtube/callback` - Handle OAuth callback
+- `GET /api/ingest/status/{task_id}` - Check ingestion status
+
+### Items & Recommendations
+- `GET /api/items` - List media items
+- `GET /api/recommendations` - Get user recommendations
+- `POST /api/recommendations/refresh` - Refresh recommendations
+
+### Background Jobs
+- `GET /api/jobs/{task_id}` - Get job status
+- `GET /api/jobs` - List active jobs
+- `DELETE /api/jobs/{task_id}` - Cancel job
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests
+5. Run linting and formatting
+6. Submit a pull request
+
+## 📝 License
+
+This project is licensed under the MIT License.
+
+## 🆘 Support
+
+- **Issues**: Create a GitHub issue
+- **Documentation**: Check the `/docs` endpoint when running
+- **Community**: Join our discussions
+
+## 🔮 Roadmap
+
+- [ ] User authentication with NextAuth
+- [ ] Advanced recommendation algorithms
+- [ ] Social features and sharing
+- [ ] Mobile app
+- [ ] More streaming platform integrations
+- [ ] Advanced analytics dashboard
+- [ ] Export and backup functionality
