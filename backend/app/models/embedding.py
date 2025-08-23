@@ -6,10 +6,11 @@ vector embeddings of media items for similarity search and recommendations.
 import uuid
 from datetime import datetime
 from typing import Optional, List
-from sqlalchemy import Column, String, DateTime, ForeignKey
+from sqlalchemy import Column, String, DateTime, ForeignKey, Integer
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from pydantic import BaseModel
+from pgvector.sqlalchemy import Vector
 
 from ..db.database import Base
 
@@ -19,9 +20,9 @@ class Embedding(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     item_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("items.id"), nullable=False, index=True)
-    vector: Mapped[List[float]] = mapped_column("vector", nullable=False)  # pgvector column
+    vector: Mapped[Vector] = mapped_column(Vector(1536), nullable=False)  # pgvector column
     model: Mapped[str] = mapped_column(String, nullable=False, index=True)  # openai, ollama, etc.
-    dimensions: Mapped[int] = mapped_column(String, nullable=False, default=1536)
+    dimensions: Mapped[int] = mapped_column(Integer, nullable=False, default=1536)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     # Relationships
