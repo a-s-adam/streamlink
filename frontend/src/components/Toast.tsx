@@ -52,7 +52,7 @@ export function ToastProvider({ children }: ToastProviderProps) {
     setToasts(prev => [...prev, newToast])
 
     // Auto-remove toast after duration
-    if (newToast.duration > 0) {
+    if (newToast.duration && newToast.duration > 0) {
       setTimeout(() => {
         removeToast(id)
       }, newToast.duration)
@@ -160,7 +160,7 @@ function ToastItem({ toast, onRemove }: ToastItemProps) {
                 {toast.title}
               </p>
               {toast.message && (
-                <p className="mt-1 text-sm text-gray-600">
+                <p className="text-sm text-gray-600">
                   {toast.message}
                 </p>
               )}

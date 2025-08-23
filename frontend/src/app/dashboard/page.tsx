@@ -15,7 +15,7 @@ import {
   Clock,
   Star
 } from 'lucide-react'
-import { useToast } from '@/components/Toast'
+import { useToastHelpers } from '@/components/Toast'
 import { Loading } from '@/components/Loading'
 
 interface DashboardStats {
@@ -37,7 +37,7 @@ export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([])
   const [loading, setLoading] = useState(true)
-  const { success, error } = useToast()
+  const { success, error } = useToastHelpers()
 
   useEffect(() => {
     fetchDashboardData()
